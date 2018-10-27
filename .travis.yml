@@ -8,6 +8,5 @@ before_install:
 install:
   - pip install -r requirements.txt
 env:
-  - DEBUG=True
-  - TEST_MODE=True
+  - DEBUG=True TEST_MODE=True
 script: python manage.py test --parallel
