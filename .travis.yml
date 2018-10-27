@@ -1,19 +1,39 @@
+sudo: true
+dist: trusty
 language: python
 python:
   - "3.6"
-addons:
-  - postgresql: "10"
-  apt:
-    packages:
-      - postgresql-10-postgis-2.3
 
-before_install:
-  - sudo add-apt-repository -y ppa:ubuntugis/ppa
-  - sudo apt-get update
-  - sudo apt-get install -y gdal-bin
-  - psql -U postgres -c "create extension postgis"
+services:
+  - postgresql
+
+addons:
+  # Note: we must use Postgres >=9.3 because support for 9.2 was dropped by Django 2.1
+  postgresql: "9.6"
+  apt:
+    update: true
+    packages:
+      - postgresql-9.6-postgis-2.3
+
 install:
   - pip install -r requirements.txt
+
 env:
-  - DEBUG=True TEST_MODE=True DATABASE_URL="postgresql://localhost/" REDIS_URL="redis://localhost:6379/0"
+  global:
+    - TEST_MODE=True
+    - DATABASE_URL="postgresql://postgres:@localhost/test_unicaronas"
+    - REDIS_URL="redis://localhost:6379/0"
+    - PGHOST=localhost
+    - PGUSER=postgres
+
+before_script:
+  # Custom postgres will not disable password auth by default. We have to do it manually
+  # See: https://github.com/travis-ci/travis-ci/issues/9624
+  - sudo sed -i -e '/local.*peer/s/postgres/all/' -e 's/peer\|md5/trust/g' /etc/postgresql/*/main/pg_hba.conf
+  - sudo service postgresql restart
+  - sleep 5
+
+  - psql -U postgres -c 'create database test_unicaronas'
+  - psql -U postgres -d test_unicaronas -c 'create extension postgis'
+
 script: python manage.py test --parallel
