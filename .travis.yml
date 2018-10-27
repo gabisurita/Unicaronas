@@ -2,7 +2,8 @@ language: python
 python:
   - "3.6"
 addons:
-  postgresql: "10"
+  - postgresql
+  - redis
 before_install:
   - sudo add-apt-repository -y ppa:ubuntugis/ppa
   - sudo apt-get update
@@ -10,5 +11,5 @@ before_install:
 install:
   - pip install -r requirements.txt
 env:
-  - DEBUG=True TEST_MODE=True
+  - DEBUG=True TEST_MODE=True DATABASE_URL="postgresql://localhost/" REDIS_URL="redis://localhost:6379/0"
 script: python manage.py test --parallel
